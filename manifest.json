@@ -1,0 +1,81 @@
+{
+  "manifest_version": 3,
+  "name": "AI Multi Ask",
+  "version": "1.2.0",
+  "description": "一键将统一 Prompt 填入 ChatGPT、Gemini、Qwen 和 DeepSeek，多 AI 对比与提问助手",
+  "icons": {
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
+  "action": {
+    "default_title": "打开 AI Multi Ask 侧边栏 (Ctrl+Shift+A)",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "32": "assets/icon32.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
+  },
+  "side_panel": {
+    "default_path": "src/sidepanel/sidepanel.html"
+  },
+  "background": {
+    "service_worker": "src/background/background.js"
+  },
+  "permissions": [
+    "tabs",
+    "storage",
+    "sidePanel",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.chatgpt.com/*",
+    "*://gemini.google.com/*",
+    "*://*.tongyi.aliyun.com/*",
+    "*://*.tongyi.ai/*",
+    "*://*.qwenlm.ai/*",
+    "*://*.qwen.ai/*",
+    "*://*.deepseek.com/*",
+    "https://chat.openai.com/*"
+  ],
+  "commands": {
+    "open_side_panel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+A",
+        "mac": "Command+Shift+A"
+      },
+      "description": "打开 AI Multi Ask 侧边栏"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.chatgpt.com/*",
+        "*://gemini.google.com/*",
+        "*://*.tongyi.aliyun.com/*",
+        "*://*.tongyi.ai/*",
+        "*://*.qwenlm.ai/*",
+        "*://*.qwen.ai/*",
+        "*://*.deepseek.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": [
+        "src/utils/dom.js",
+        "src/utils/storage.js",
+        "src/utils/messaging.js",
+        "src/adapters/adapter-base.js",
+        "src/adapters/chatgpt.js",
+        "src/adapters/gemini.js",
+        "src/adapters/qwen.js",
+        "src/adapters/deepseek.js",
+        "src/adapters/index.js",
+        "src/adapters/capabilities.js",
+        "src/content/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "minimum_chrome_version": "116"
+}

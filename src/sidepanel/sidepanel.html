@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Multi Ask</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="edge-app-container">
+    <!-- Edge 原生风格顶栏 -->
+    <header class="edge-header">
+      <div class="header-brand">
+        <div class="brand-logo">
+          <img src="../../assets/icon32.png" alt="Logo" width="20" height="20">
+        </div>
+        <div class="brand-info">
+          <span class="brand-title">AI Multi Ask</span>
+          <span class="brand-badge">v1.2</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-toggle-presets" class="fluent-icon-btn" title="Prompt 预设模板" aria-label="Presets">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+        </button>
+        <button id="btn-toggle-history" class="fluent-icon-btn" title="历史 Prompt 记录" aria-label="History">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        </button>
+        <button id="btn-toggle-settings" class="fluent-icon-btn" title="偏好设置与高级选项" aria-label="Settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Toast 状态通知条 -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- 抽屉面板：预设模板 (Presets) -->
+    <section id="panel-presets" class="fluent-drawer hidden">
+      <div class="drawer-header">
+        <h3>Prompt 预设模板</h3>
+        <button class="fluent-close-btn" data-target="panel-presets">&times;</button>
+      </div>
+      <div class="drawer-content">
+        <div class="preset-add-bar">
+          <input type="text" id="input-preset-title" class="fluent-input" placeholder="输入预设标题 (如: 极客代码)" maxlength="20">
+          <button id="btn-add-preset" class="fluent-btn fluent-btn-secondary">保存为新预设</button>
+        </div>
+        <div id="presets-list" class="presets-list"></div>
+      </div>
+    </section>
+
+    <!-- 抽屉面板：历史记录 (History) -->
+    <section id="panel-history" class="fluent-drawer hidden">
+      <div class="drawer-header">
+        <div class="drawer-header-title">
+          <h3>Prompt 历史记录</h3>
+          <span class="subtext">自动保留最近 30 条</span>
+        </div>
+        <div class="drawer-header-actions">
+          <button id="btn-clear-history" class="fluent-text-btn-danger">清空</button>
+          <button class="fluent-close-btn" data-target="panel-history">&times;</button>
+        </div>
+      </div>
+      <div class="drawer-content">
+        <div id="history-list" class="history-list"></div>
+      </div>
+    </section>
+
+    <!-- 抽屉面板：设置 (Settings) -->
+    <section id="panel-settings" class="fluent-drawer hidden">
+      <div class="drawer-header">
+        <h3>设置与平台个性化指令</h3>
+        <button class="fluent-close-btn" data-target="panel-settings">&times;</button>
+      </div>
+      <div class="drawer-content">
+        <div class="setting-group">
+          <label class="setting-label">写入模式 (Input Mode)</label>
+          <div class="fluent-radio-group">
+            <label class="fluent-radio-label">
+              <input type="radio" name="fill-mode" value="replace" checked>
+              <span>替换已有 (Replace)</span>
+            </label>
+            <label class="fluent-radio-label">
+              <input type="radio" name="fill-mode" value="append">
+              <span>末尾追加 (Append)</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-label-row">
+            <label class="setting-label" for="select-gemini-account">Gemini 账号选择 (Google Multi-Account)</label>
+            <span class="subtext">账号偏好用于打开和选择标签页，不重定向已有页面</span>
+          </div>
+          <select id="select-gemini-account" class="fluent-input" style="height: 30px; cursor: pointer;">
+            <option value="auto">沿用当前账号（不自动跳转）</option>
+            <option value="1">第 2 个 Google 账号 (u/1)</option>
+            <option value="0">第 1 个 Google 账号 (u/0 - 默认主账号)</option>
+            <option value="2">第 3 个 Google 账号 (u/2)</option>
+            <option value="3">第 4 个 Google 账号 (u/3)</option>
+            <option value="custom">自定义 Gemini 网址...</option>
+          </select>
+          <input type="text" id="input-gemini-custom-url" class="fluent-input hidden" style="margin-top: 6px;" placeholder="例如: https://gemini.google.com/u/1/app">
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-label-row">
+            <label class="setting-label">各平台独立指令后缀 (Advanced Suffix)</label>
+            <span class="subtext">在主 Prompt 之后自动追加专属要求</span>
+          </div>
+          <div class="suffix-list">
+            <div class="suffix-item">
+              <span class="suffix-tag">ChatGPT</span>
+              <input type="text" id="suffix-chatgpt" class="fluent-input" placeholder="例如: 优先使用 Python 3.12 并给出类型标注">
+            </div>
+            <div class="suffix-item">
+              <span class="suffix-tag">Gemini</span>
+              <input type="text" id="suffix-gemini" class="fluent-input" placeholder="例如: 结合学术前沿与最新文献综述">
+            </div>
+            <div class="suffix-item">
+              <span class="suffix-tag">Qwen</span>
+              <input type="text" id="suffix-qwen" class="fluent-input" placeholder="例如: 结合国内实际产业场景深入阐述">
+            </div>
+            <div class="suffix-item">
+              <span class="suffix-tag">DeepSeek</span>
+              <input type="text" id="suffix-deepseek" class="fluent-input" placeholder="例如: 展开深入严谨的公式与逻辑推导">
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-group setting-row">
+          <div>
+            <label class="setting-label" for="chk-debug-mode">开发者调试日志 (Debug Mode)</label>
+            <span class="subtext block">在 Console 输出选择器与推流调试信息</span>
+          </div>
+          <input type="checkbox" id="chk-debug-mode" class="fluent-switch">
+        </div>
+      </div>
+    </section>
+
+    <!-- 主滚动工作区 -->
+    <main class="edge-main-scroll">
+      <!-- 1. Prompt 输入卡片 -->
+      <section class="fluent-card prompt-section">
+        <div class="prompt-header">
+          <span class="section-title">提示词 (PROMPT)</span>
+          <div class="prompt-meta-actions">
+            <span id="char-count" class="char-badge">0 字</span>
+            <button id="btn-clear-prompt" class="fluent-text-btn" title="清空提示词">清空</button>
+          </div>
+        </div>
+
+        <div class="prompt-input-box">
+          <textarea
+            id="prompt-textarea"
+            class="fluent-textarea"
+            placeholder="在此输入要分发的 Prompt 提示词...&#10;快捷键：Ctrl + Enter 立即提问&#10;Esc 退出输入框聚焦"
+            rows="4"
+          ></textarea>
+        </div>
+
+        <div class="attachments-box">
+          <label class="fluent-btn-sm" for="attachment-input">添加文件 / 图片</label>
+          <input id="attachment-input" type="file" multiple hidden>
+          <span class="subtext">最多 5 个，总计 20 MB；发送到勾选的平台</span>
+          <div id="attachment-list" aria-live="polite"></div>
+        </div>
+        <div class="prompt-toolbar">
+          <label class="fluent-checkbox-label auto-send-toggle" title="勾选后点击提问将自动触发各平台的发送按钮并抓取回复">
+            <input type="checkbox" id="chk-auto-send" checked>
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-text">自动发送并获取回复</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- 2. AI 平台选择卡片 -->
+      <section class="fluent-card providers-section">
+        <div class="section-header-row">
+          <span class="section-title">AI 提供商 (PROVIDERS)</span>
+          <div class="quick-links">
+            <button id="btn-select-all" class="fluent-link-btn">全选</button>
+            <span class="link-divider">·</span>
+            <button id="btn-deselect-all" class="fluent-link-btn">取消</button>
+            <span class="link-divider">·</span>
+            <button id="btn-recheck" class="fluent-link-btn">刷新状态</button>
+            <button id="btn-read-models" class="fluent-link-btn">读取实际模型</button>
+          </div>
+        </div>
+
+        <div class="provider-pills-grid" id="provider-cards">
+          <!-- ChatGPT Card -->
+          <div class="provider-pill" data-provider="chatgpt" id="card-chatgpt">
+            <div class="pill-main-row">
+              <label class="pill-checkbox-wrap">
+                <input type="checkbox" class="provider-checkbox" data-provider="chatgpt" checked>
+                <div class="pill-info">
+                  <div class="pill-title-row">
+                    <span class="pill-name">ChatGPT</span>
+                    <span class="pill-badge status-not-open" id="status-chatgpt">
+                      <span class="status-dot"></span>
+                      <span class="status-text">检测中...</span>
+                    </span>
+                  </div>
+                </div>
+              </label>
+              <button class="pill-action-btn" data-provider="chatgpt" id="action-chatgpt" title="打开或跳转">打开</button>
+            </div>
+            <div class="pill-model-row">
+              <span class="model-select-label">模型</span>
+              <select class="fluent-model-select" data-provider="chatgpt" id="model-chatgpt" title="选择 ChatGPT 运行模型"><option value="default">沿用网页当前模型</option></select>
+            </div>
+          </div>
+
+          <!-- Gemini Card -->
+          <div class="provider-pill" data-provider="gemini" id="card-gemini">
+            <div class="pill-main-row">
+              <label class="pill-checkbox-wrap">
+                <input type="checkbox" class="provider-checkbox" data-provider="gemini" checked>
+                <div class="pill-info">
+                  <div class="pill-title-row">
+                    <span class="pill-name">Gemini</span>
+                    <span class="pill-badge status-not-open" id="status-gemini">
+                      <span class="status-dot"></span>
+                      <span class="status-text">检测中...</span>
+                    </span>
+                  </div>
+                </div>
+              </label>
+              <button class="pill-action-btn" data-provider="gemini" id="action-gemini" title="打开或跳转">打开</button>
+            </div>
+            <div class="pill-model-row">
+              <span class="model-select-label">模型</span>
+              <select class="fluent-model-select" data-provider="gemini" id="model-gemini" title="选择 Gemini 运行模型"><option value="default">沿用网页当前模型</option></select>
+            </div>
+          </div>
+
+          <!-- Qwen Card -->
+          <div class="provider-pill" data-provider="qwen" id="card-qwen">
+            <div class="pill-main-row">
+              <label class="pill-checkbox-wrap">
+                <input type="checkbox" class="provider-checkbox" data-provider="qwen" checked>
+                <div class="pill-info">
+                  <div class="pill-title-row">
+                    <span class="pill-name">Qwen (千问)</span>
+                    <span class="pill-badge status-not-open" id="status-qwen">
+                      <span class="status-dot"></span>
+                      <span class="status-text">检测中...</span>
+                    </span>
+                  </div>
+                </div>
+              </label>
+              <button class="pill-action-btn" data-provider="qwen" id="action-qwen" title="打开或跳转">打开</button>
+            </div>
+            <div class="pill-model-row">
+              <span class="model-select-label">模型</span>
+              <select class="fluent-model-select" data-provider="qwen" id="model-qwen" title="选择通义千问运行模型"><option value="default">沿用网页当前模型</option></select>
+            </div>
+          </div>
+
+          <!-- DeepSeek Card -->
+          <div class="provider-pill" data-provider="deepseek" id="card-deepseek">
+            <div class="pill-main-row">
+              <label class="pill-checkbox-wrap">
+                <input type="checkbox" class="provider-checkbox" data-provider="deepseek" checked>
+                <div class="pill-info">
+                  <div class="pill-title-row">
+                    <span class="pill-name">DeepSeek</span>
+                    <span class="pill-badge status-not-open" id="status-deepseek">
+                      <span class="status-dot"></span>
+                      <span class="status-text">检测中...</span>
+                    </span>
+                  </div>
+                </div>
+              </label>
+              <button class="pill-action-btn" data-provider="deepseek" id="action-deepseek" title="打开或跳转">打开</button>
+            </div>
+          <div class="pill-model-row"><span class="model-select-label">模型</span><select id="model-deepseek" class="fluent-model-select"><option value="default">沿用网页当前模型</option></select></div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 主操作提交栏 -->
+      <div class="primary-action-bar">
+        <button id="btn-fill" class="fluent-btn-primary main-submit-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 2L11 13"></path><path d="M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+          <span id="submit-btn-text">一键提问并获取回复</span>
+          <span class="kbd-badge">Ctrl+Enter</span>
+        </button>
+
+        <div class="secondary-actions-row">
+          <button id="btn-open-selected" class="fluent-btn-secondary" title="在后台快速打开勾选的全部 AI 页面">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            <span>打开选中网站</span>
+          </button>
+          <button id="btn-retry-failed" class="fluent-btn-secondary hidden" title="仅重新向失败项发送">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            <span>重试失败项</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 4. AI 回复对比与展示区 (Response Section) -->
+      <section class="fluent-card response-section">
+        <div class="response-header">
+          <div class="response-title-wrap">
+            <span class="section-title">AI 回复实时提取 (RESPONSES)</span>
+            <span id="response-summary-badge" class="sub-badge">就绪</span>
+          </div>
+          <div class="response-controls">
+            <div class="view-switch-group">
+              <button id="view-mode-tabs" class="view-switch-btn active" title="标签切换视图">单栏</button>
+              <button id="view-mode-split" class="view-switch-btn" title="多栏并排对比视图">并排对比</button>
+            </div>
+            <button id="btn-refresh-responses" class="fluent-btn-sm">刷新回答</button>
+            <button id="btn-export" class="fluent-btn-sm">导出 Markdown</button>
+            <button id="btn-compare" class="fluent-btn-sm">生成对比提示词</button>
+            <button id="btn-copy-all-responses" class="fluent-btn-sm" title="一键复制全部已完成的 AI 回复">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>复制全部</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="synthesis-box">
+        <label for="synthesis-provider">统合 AI</label>
+        <select id="synthesis-provider" class="fluent-input"><option value="gemini">Gemini（第二个账号）</option><option value="chatgpt">ChatGPT</option><option value="qwen">Qwen</option><option value="deepseek">DeepSeek</option></select>
+        <button id="btn-synthesize" class="fluent-btn-sm">统合各方意见并导出</button>
+        <button id="btn-export-synthesis" class="fluent-btn-sm" disabled>再次导出统合报告</button>
+        <p id="synthesis-status" class="subtext" aria-live="polite">将已完成的选中回答发送给统合 AI；导出综合结论及各 AI 原文。</p>
+        <div id="synthesis-result"></div>
+      </div>
+      <!-- 标签页头部切换栏 (Tabs Mode) -->
+        <div class="fluent-tabs-bar" id="response-tabs-bar">
+          <button class="fluent-tab-item active" data-tab="chatgpt">
+            <span class="tab-status-dot dot-chatgpt"></span>
+            <span class="tab-name">ChatGPT</span>
+          </button>
+          <button class="fluent-tab-item" data-tab="gemini">
+            <span class="tab-status-dot dot-gemini"></span>
+            <span class="tab-name">Gemini</span>
+          </button>
+          <button class="fluent-tab-item" data-tab="qwen">
+            <span class="tab-status-dot dot-qwen"></span>
+            <span class="tab-name">Qwen</span>
+          </button>
+          <button class="fluent-tab-item" data-tab="deepseek">
+            <span class="tab-status-dot dot-deepseek"></span>
+            <span class="tab-name">DeepSeek</span>
+          </button>
+        </div>
+
+        <!-- 回复内容区容器 (动态支持 Tabs 与 Split 模式) -->
+        <div class="response-container view-tabs-mode" id="response-views-container">
+          <!-- ChatGPT Panel -->
+          <div class="response-panel active" id="resp-panel-chatgpt" data-provider="chatgpt">
+            <div class="resp-panel-bar">
+              <div class="resp-provider-info">
+                <span class="resp-tag">ChatGPT</span>
+                <span class="resp-status-text" id="resp-status-chatgpt">等待提问</span>
+                <span class="resp-length-text" id="resp-len-chatgpt"></span>
+              </div>
+              <div class="resp-panel-actions">
+                <button class="fluent-btn-xs btn-copy-resp" data-provider="chatgpt">复制回答</button>
+                <button class="fluent-btn-xs btn-focus-resp" data-provider="chatgpt">跳转网页</button>
+              </div>
+            </div>
+            <div class="resp-content-area" id="resp-content-chatgpt">
+              <div class="resp-placeholder">提问后，ChatGPT 的实时回答将在此逐字呈现。</div>
+            </div>
+          </div>
+
+          <!-- Gemini Panel -->
+          <div class="response-panel" id="resp-panel-gemini" data-provider="gemini">
+            <div class="resp-panel-bar">
+              <div class="resp-provider-info">
+                <span class="resp-tag">Gemini</span>
+                <span class="resp-status-text" id="resp-status-gemini">等待提问</span>
+                <span class="resp-length-text" id="resp-len-gemini"></span>
+              </div>
+              <div class="resp-panel-actions">
+                <button class="fluent-btn-xs btn-copy-resp" data-provider="gemini">复制回答</button>
+                <button class="fluent-btn-xs btn-focus-resp" data-provider="gemini">跳转网页</button>
+              </div>
+            </div>
+            <div class="resp-content-area" id="resp-content-gemini">
+              <div class="resp-placeholder">提问后，Gemini 的实时回答将在此逐字呈现。</div>
+            </div>
+          </div>
+
+          <!-- Qwen Panel -->
+          <div class="response-panel" id="resp-panel-qwen" data-provider="qwen">
+            <div class="resp-panel-bar">
+              <div class="resp-provider-info">
+                <span class="resp-tag">Qwen (千问)</span>
+                <span class="resp-status-text" id="resp-status-qwen">等待提问</span>
+                <span class="resp-length-text" id="resp-len-qwen"></span>
+              </div>
+              <div class="resp-panel-actions">
+                <button class="fluent-btn-xs btn-copy-resp" data-provider="qwen">复制回答</button>
+                <button class="fluent-btn-xs btn-focus-resp" data-provider="qwen">跳转网页</button>
+              </div>
+            </div>
+            <div class="resp-content-area" id="resp-content-qwen">
+              <div class="resp-placeholder">提问后，通义千问的实时回答将在此逐字呈现。</div>
+            </div>
+          </div>
+
+          <!-- DeepSeek Panel -->
+          <div class="response-panel" id="resp-panel-deepseek" data-provider="deepseek">
+            <div class="resp-panel-bar">
+              <div class="resp-provider-info">
+                <span class="resp-tag">DeepSeek</span>
+                <span class="resp-status-text" id="resp-status-deepseek">等待提问</span>
+                <span class="resp-length-text" id="resp-len-deepseek"></span>
+              </div>
+              <div class="resp-panel-actions">
+                <button class="fluent-btn-xs btn-copy-resp" data-provider="deepseek">复制回答</button>
+                <button class="fluent-btn-xs btn-focus-resp" data-provider="deepseek">跳转网页</button>
+              </div>
+            </div>
+            <div class="resp-content-area" id="resp-content-deepseek">
+              <div class="resp-placeholder">提问后，DeepSeek 的实时回答将在此逐字呈现。</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 加载核心模块 -->
+  <script src="../utils/dom.js"></script>
+  <script src="../utils/storage.js"></script>
+  <script src="../utils/messaging.js"></script>
+  <script src="../adapters/adapter-base.js"></script>
+  <script src="../adapters/chatgpt.js"></script>
+  <script src="../adapters/gemini.js"></script>
+  <script src="../adapters/qwen.js"></script>
+  <script src="../adapters/deepseek.js"></script>
+  <script src="../adapters/index.js"></script>
+  <script src="../utils/report.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>

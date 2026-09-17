@@ -1,0 +1,9 @@
+tests/.browser-profile/
+tests/.browser-profile-*/
+node_modules/
+backups/
+.env
+.env.*
+!.env.example
+*.log
+gcm-diagnose.log
